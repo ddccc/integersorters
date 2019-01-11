@@ -317,6 +317,7 @@ void tpsc2();
 void dflgm();
 void cut4p();
 void cut4pc();
+void showDistribution();
 
 int main (int argc, char *argv[]) {
   printf("Running compare2 ...\n");
@@ -410,7 +411,7 @@ int main (int argc, char *argv[]) {
   // compareMergeSortDDCAgainstDdC2Sort(); // cut2
   // compareDpqSortAgainstDdCSort2(); // using Bentley stuff <<<<<<<<<<<<<<<<<<<<<
   // showSuffle2();
-  // compareSortcBAgainstCut4(); // using Bentley stuff
+  // compareSortcBAgainstCut4(); // using Bentley stuff +++++++
   // compareSortcQAgainstCut2(); // !!!!native qsort/ LQ/ B&M <-> cut2 using Bentley stuff
   // compareSortcBAgainstCut2(); // B&M <-> cut2 using Bentley stuff  <<<<<<<<<<
   // compareChenSortAgainstCut2(); // using Bentley stuff
@@ -422,6 +423,7 @@ int main (int argc, char *argv[]) {
   // compare00DpqAgainstFourSort();
   // compare00DpqAgainstTPS();
   // compare00DpqAgainstSixSort();
+  // showDistribution();
   return 0;
 } // end main
 
@@ -828,7 +830,7 @@ void timeTest() {
       // tps3(A, 0, siz-1);
       // tps2(A, 0, siz-1);
       // dpqSort(A, 0, siz-1);
-      cut4(A, 0, siz-1);  
+      // cut4(A, 0, siz-1);  
       // dflglTest(A, 0, siz-1);
       // dflgmTest(A, 0, siz-1);  
       // dflgmTestX(A, 0, siz-1);  
@@ -837,7 +839,7 @@ void timeTest() {
       // dflgmTestW(A, 0, siz-1);
       // sortlinux(A, 0, siz-1);    
       // sortcB(A, 0, siz-1);    
-      // part3(A, 0, siz-1);    
+      part3(A, 0, siz-1);    
       // chenSort(A, 0, siz-1); 
       // myqs(A, 0, siz-1); 
     }
@@ -1576,11 +1578,11 @@ void quicksort0c(int *A, int N, int M, int depthLimit) {
     }
 
     /* optional check when inputs have many equal elements
-    // if ( compareXY(A[N], A[M]) == 0 ) {
-       if ( A[N] == A[M]
-      dflgm(A, N, M, p0, quicksort0c, depthLimit);
-      return;
-    } */
+       // if ( compareXY(A[N], A[M]) == 0 ) {
+       if ( A[N] == A[M] ) {
+          dflgm(A, N, M, p0, quicksort0c, depthLimit);
+          return;
+       } */
 
     // p0 is index to 'best' pivot ...    
     iswap(N, p0, A); // ... and is put in first position
@@ -2024,11 +2026,11 @@ void cut2c(int *A, int N, int M, int depthLimit)
   I= N;
   J= M;
 
-  // The left segment has elements < T
-	 // The right segment has elements >= T
+  // The left segment has elements <= T
+  // The right segment has elements > T
  Left:
-  while ( A[++I] < T ); AI = A[I];
-  while ( T <= A[--J] ); AJ = A[J];
+  while ( A[++I] <= T ); AI = A[I];
+  while ( T < A[--J] ); AJ = A[J];
   if ( I < J ) {
     A[I] = AJ; A[J] = AI;
     goto Left;
@@ -8881,8 +8883,8 @@ void cut4c(int *A, int N, int M, int depthLimit)
   */
 
   if ( A[maxlx] == A[middlex] || 
-       A[middlex] == A[mrx] == 0 || 
-       A[mrx] == A[minrx] == 0 ) {
+       A[middlex] == A[mrx] || 
+       A[mrx] == A[minrx] ) {
     // no good pivots available, thus escape
     dflgm(A, N, M, middlex, cut4c, depthLimit);
     return;
@@ -9382,6 +9384,7 @@ void cut4c(int *A, int N, int M, int depthLimit)
 
  Finish4:
 	// printf("cut4 exit Finish4 N: %d M: %d\n", N, M);
+	// printf("cut4 exit Finish4 i %i z %i j %i \n", i, z, j);
          /*   L        ML         MR            R
 	   |-----][----------|-----------][-----|
 	   N     i           z            j     M
@@ -10413,9 +10416,9 @@ void compareDpqSortAgainstDdCSort2() {
 void compareSortcBAgainstCut4() {
   // printf("Entering compareSortcBAgainstCut4 Sawtooth ........\n");
   // printf("Entering compareSortcBAgainstCut4 Rand2 ........\n");
-  printf("Entering compareSortcBAgainstCut4 Plateau ........\n");
+  // printf("Entering compareSortcBAgainstCut4 Plateau ........\n");
   // printf("Entering compareSortcBAgainstCut4 Shuffle ........\n");
-  // printf("Entering compareSortcBAgainstCut4 Stagger ........\n");
+  printf("Entering compareSortcBAgainstCut4 Stagger ........\n");
   int sortcBTime, cut4Time, T;
   int seed = 666;
   int z;
@@ -10424,7 +10427,8 @@ void compareSortcBAgainstCut4() {
   // int limit = 1024 * 1024 * 16 + 1;
   // int seedLimit = 32 * 1024;
   int limit = siz + 1;
-  int seedLimit = 32;
+  // int seedLimit = 32;
+  int seedLimit = 1;
   float frac;
   while (siz <= limit) {
     printf("%s %d %s %d %s", "siz: ", siz, " seedLimit: ", seedLimit, "\n");
@@ -10443,24 +10447,26 @@ void compareSortcBAgainstCut4() {
       // sortcBCntx = cut4Cntx = sumQsortBx = sumCut4x = 0;
       for (m = 1; m < 2 * siz; m = m * 2) {
       // m = 1024 * 1024; {
-      	for (tweak = 0; tweak <= 5; tweak++ ) {
+      	for (tweak = 0; tweak <= 5; tweak++ ) { 
+	  if ( 4 == tweak ) continue;  // due to bias of sorted arrays
 	  sortcBTime = 0; cut4Time = 0;
 	  TFill = clock();
 	  for (seed = 0; seed < seedLimit; seed++) 
 	    // sawtooth(A, siz, m, tweak);
 	    // rand2(A, siz, m, tweak, seed);
-	    plateau(A, siz, m, tweak);
+	    // plateau(A, siz, m, tweak);
 	    // shuffle(A, siz, m, tweak, seed);
-	    // stagger(A, siz, m, tweak);
+	    stagger(A, siz, m, tweak);
 	  TFill = clock() - TFill;
 	  T = clock();
 	  for (seed = 0; seed < seedLimit; seed++) { 
 	    // sawtooth(A, siz, m, tweak);
 	    // rand2(A, siz, m, tweak, seed);
-	    plateau(A, siz, m, tweak);
+	    // plateau(A, siz, m, tweak);
 	    // shuffle(A, siz, m, tweak, seed);
-	    // stagger(A, siz, m, tweak);
-	    sortcB(A, 0, siz-1);  
+	    stagger(A, siz, m, tweak);
+	    sortcB(A, 0, siz-1); // Bentley
+	    // part3(A, 0, siz-1);
 	  }
 	  sortcBTime = sortcBTime + clock() - T - TFill;
 	  sumQsortB += sortcBTime;
@@ -10469,10 +10475,11 @@ void compareSortcBAgainstCut4() {
 	  for (seed = 0; seed < seedLimit; seed++) { 
 	    // sawtooth(A, siz, m, tweak);
 	    // rand2(A, siz, m, tweak, seed);
-	    plateau(A, siz, m, tweak);
+	    // plateau(A, siz, m, tweak);
 	    // shuffle(A, siz, m, tweak, seed);
-	    // stagger(A, siz, m, tweak);
-	    cut4(A, 0, siz-1);  
+	    stagger(A, siz, m, tweak);
+	    // cut2(A, 0, siz-1); 
+	    cut4(A, 0, siz-1); 
 	  }
 	  cut4Time = cut4Time + clock() - T - TFill;
 	  sumCut4 += cut4Time;
@@ -10505,6 +10512,13 @@ void compareSortcBAgainstCut4() {
   }
 } // end compareQsortBAgainstCut4
 
+void showDistribution() {
+  int siz = 40, m = 0, tweak = 5, i;
+  int A[siz];
+  stagger(A, siz, m, tweak);
+  for (i = 0; i < siz; i++)
+    printf("i %i %i\n", i, A[i]);
+} // end showDistribution
 
 void compareSortcQAgainstCut2() { // native qsort or linux qsort <-> cut2 using Bentley stuff
   printf("Entering compareSortcQAgainstCut2 Sawtooth ........\n");
