@@ -445,7 +445,9 @@ void check(int *A, int N, int M)
 } // end check
 
 int size2 = 1024*1024*16;
-// int size2 = 1024 * 8;
+// int size2 = 1024 * 512; 
+
+
 
 void testAlgorithm(char* label, void (*alg1)() ) {
   int siz = size2;
@@ -793,7 +795,7 @@ void timeTest() {
   int seed;
   //  int seedLimit = 300000;
   int seedLimit = 4;
-  int reps = 5;
+  int reps = 10;
   int z;
   // int k;
   int siz = size2;
@@ -832,14 +834,14 @@ void timeTest() {
       // dpqSort(A, 0, siz-1);
       // cut4(A, 0, siz-1);  
       // dflglTest(A, 0, siz-1);
-      // dflgmTest(A, 0, siz-1);  
+      dflgmTest(A, 0, siz-1);  
       // dflgmTestX(A, 0, siz-1);  
       // dflgmTestY(A, 0, siz-1);  
       // dflgmTestZ(A, 0, siz-1);
       // dflgmTestW(A, 0, siz-1);
       // sortlinux(A, 0, siz-1);    
       // sortcB(A, 0, siz-1);    
-      part3(A, 0, siz-1);    
+      // part3(A, 0, siz-1);    
       // chenSort(A, 0, siz-1); 
       // myqs(A, 0, siz-1); 
     }
@@ -1515,13 +1517,13 @@ void fillarray(int *A, int lng, int startv) {
   srand(startv);
   int i;
   for ( i = 0; i < lng; i++) A[i] = rand()%range; 
+  // for ( i = 0; i < lng; i++) A[i] = 0;
   /* for testing dflgm
   int val = 1000000000;
   A[(lng-1)/2] = val;
   int delta = lng/10;
   for ( i = 0; i < lng; i = i + delta ) A[i] = val;
   */
-  // for ( i = 0; i < lng; i++) A[i] = 0;
 } // end of fillarray
 
 void vswap(int *A, int N, int N3, int eq) {
@@ -3551,17 +3553,16 @@ void dflgmTest2(int *A, int N, int M, int depthLimit) {
     return;
   }
   int L = M-N;
-  /*
   if  (L <= 50 ) { 
     quicksort0c(A, N, M, depthLimit);
     return;
   }
-  */
+  /*
   if ( L <= 10 ) { 
     insertionsort(A, N, M);
     return;
   }
-  /*
+  */
         int sixth = (M-N + 1) / 6;
         int e1 = N  + sixth;
         int e5 = M - sixth;
@@ -3588,9 +3589,8 @@ void dflgmTest2(int *A, int N, int M, int depthLimit) {
 	// Fix end points
 	if ( ae1 < A[N] ) iswap(N, e1, A);
 	if ( A[M] < ae5 ) iswap(M, e5, A);
-  */
-  // dflgm(A, N, M, e3, dflgmTest2, depthLimit-1);
-  dflgm(A, N, M, N+(L>>1), dflgmTest2, depthLimit-1);
+  dflgm(A, N, M, e3, dflgmTest2, depthLimit-1);
+  // dflgm(A, N, M, N+(L>>1), dflgmTest2, depthLimit-1);
 } // end dflgmTest2
 
 
@@ -3920,6 +3920,247 @@ void dflgm(int *A, int N, int M, int pivotx, void (*cut)(), int depthLimit) {
     (*cut)(A, j, M, depthLimit);
     (*cut)(A, N, i, depthLimit);
 } // end dflgm
+
+
+// dflgmQ does 2 & 3 way swaps. 3.2% slower than dflgm on uniform distributions
+void dflgmQ(int *A, int N, int M, int pivotx, void (*cut)(), int depthLimit) {
+  // printf("dflgm N %i M %i pivotx %i depthLimit %i\n", N,M,pivotx,depthLimit);
+  /*
+    Simple version of partitioning with: L/M/R
+    L < pivot, M = pivot, R > pivot
+    This is the integer version.  Code for the object/record version 
+    has been commented out. 
+    The 2nd best version is dflgmY
+   */
+  register int i, j, lw, up; // indices
+  register int p3; // pivot
+  register int x, y, z;
+  // register int r; // comparison output 
+  // int z; // for tracing
+
+  i = N; j = M; lw = pivotx-1; up = pivotx+1;
+  // int N2 = N+1;
+    /*
+      |---)-----(----)-------(----|
+      N   i     lw  up       j    M
+      
+      N <= i < lw < up < j <= M
+      2 <= up - lw
+      N <= x < i ==> A[x] < p3
+      lw < x < up  ==> A[x] = p3
+      j < x <= M & ==> p3 < A[x] 
+    */
+  p3 = A[pivotx]; // There IS a middle value somewhere:
+  int left = 1;
+
+  while (1) {
+    x = A[i];
+    if ( x < p3 ) { // x -> left
+      i++;
+      if ( lw < i ) {
+	break; // left gap closed
+      }
+      continue;
+    }
+    if ( x == p3 ) { // x -> middle
+    Mright:
+      while ( up <= j && p3 == (y = A[up]) ) up++;
+      if ( j < up ) { // right gap closed
+	left = 0;
+	break;
+      }
+      if ( y < p3 ) { // y -> left
+	A[i++] = y; A[up++] = x;
+	if ( j < up ) { // right gap closed
+	  left = 0;
+	  if ( lw < i ) { // left gap also closed
+	    goto Finish;
+	  }
+	  break;
+	}
+	if ( lw < i ) break; // left gap closed
+	continue;
+      }
+      // y -> right
+      while ( p3 < (z = A[j]) ) j--;
+      if ( j <= up ) { // right gap closed
+	  left = 0;
+	  break;
+      }
+      if ( p3 == z ) {
+	A[up++] = z; A[j--] = y;
+	if ( j < up ) { // right gap closed
+	  left = 0;
+	  break;
+	}
+	goto Mright;
+      }
+      // z -> left triple swap
+      A[up++] = x; A[i++] = z; A[j--] = y;
+      if ( j < up ) { // right gap closed
+	left = 0;
+	if ( lw < i ) { // left gap also closed
+	  goto Finish;
+	}
+	break;
+      }
+      if ( lw < i ) { // left gap closed
+	break;
+      }
+      continue;
+    }
+    // x -> right
+  Mright2:
+    while ( p3 < (z = A[j]) ) j--;
+    if ( j < up ) { // right gap closed
+      left = 0;
+      break;
+    }
+    if ( z < p3 ) { // z -> L, swap with x
+      A[i++] = z; A[j--] = x;
+      if ( j < up ) { // right gap closed
+	left = 0;
+	if ( lw < i ) { // left gap closed also
+	  goto Finish;
+	}
+	break;
+      }
+      if ( lw < i ) break; // left gap closed
+      continue;
+    }
+
+    // z -> middle
+    while ( up <= j && p3 == (y = A[up]) ) up++;
+    if ( j <= up ) { // right gap closed
+      left = 0;
+      break;
+    }
+    if ( p3 < y ) { // y -> right swap with z
+      A[up++] = z; 
+      A[j--] = y;
+      if ( j < up ) {
+	left = 0;
+	break;
+      }
+      goto Mright2;
+    }
+
+    // y < p3 y -> left
+    A[i++] = y; A[up++] = z; A[j--] = x;
+    if ( j < up ) { // right gap closed
+      left = 0;
+      if ( lw < i ) { // left gap closed also
+	goto Finish;
+      }
+      break;
+    }
+    if ( lw < i ) { // left gap closed
+      break;
+    }
+    continue;
+  } 
+  // end 2-gap phase
+
+  int k;
+  if ( left ) { // left closed
+    // printf("left closed N %i i %i lw %i up %i j %i M %i\n", N,i,lw,up,j,M);
+    /*
+      |--------(----)-----(------|
+      N        lw  up     j      M
+    */
+    for (k = up; k <= j; k++) {
+      if ( p3 == (y = A[k]) ) { // y -> middle
+	up++;
+	continue;
+      }
+      if ( y < p3 ) {  // y -> right
+	A[k] = A[++lw]; A[lw] = y;
+	up++;
+	continue;
+      }
+      // y -> right
+      while ( k < j && p3 < (z = A[j]) ) j--;
+      if ( k == j ) break; // gap closed
+      if ( p3 == z ) { // z -> middle
+	A[k] = z; A[j--] = y;
+	up++; 
+	continue;
+      }
+      // z -> left
+      A[up++] = A[++lw]; A[lw] = z; A[j--] = y;
+    }
+  } else { // right closed
+    // printf("right closed N %i i %i lw %i up %i j %i M %i\n", N,i,lw,up,j,M);
+    /*
+      |---)-----(----)-----------|
+      N   i     lw  up           M
+    */
+    for ( k = lw; i <= k; k--) {
+      if ( (y = A[k]) == p3 ) { // y -> middle
+	lw--;
+	continue;
+      }
+      if ( p3 < y ) { // y -> right 
+	A[k] = A[--up]; A[up] = y;
+	lw--;
+	continue;
+      }
+      // y -> left
+      while ( i < k && (x = A[i]) < p3 ) i++;
+      if ( i == k ) break; // gap closed
+      if ( p3 == x ) { // x -> middle
+	A[k] = x; A[i++] = y;
+	lw--;
+	continue;
+      }
+      // x -> right
+      A[lw--] = A[--up]; A[up] = x; A[i++] = y;
+    }
+  }
+
+ Finish:
+    /*
+      |--------(----)-----------|
+      N        lw  up           M
+    */
+  i = lw; j = up;
+   /*
+      |---]---------[---------|
+      N   i         j         M
+    */
+  /* testing stuff
+      for ( z = N; z <= i; z++ )
+	if ( p3 <= A[z] ) {
+	// if ( compareXY(p3, A[z]) <= 0 ) {
+	  printf("doneL z %i\n", z);
+	  printf("N %i i %i lw %i up %i j %i M %i\n", N,i,lw,up,j,M);
+	  exit(0);
+	}
+      for ( z = i+1; z < j; z++ )
+	if ( p3 != A[z] ) {
+	// if ( compareXY(p3, A[z]) != 0 ) {
+	  printf("doneM z %i\n", z);
+	  printf("N %i i %i lw %i up %i j %i M %i\n", N,i,lw,up,j,M);
+	  exit(0);
+	}
+      for ( z = j; z <= M ; z++ )
+	if ( A[z] <= p3 ) {
+	// if ( compareXY(A[z], p3) <= 0 ) {
+	  printf("doneR z %i\n", z);
+	  printf("N %i i %i lw %i up %i j %i M %i\n", N,i,lw,up,j,M);
+	  exit(0);
+	}
+      */
+    if ( i - N  < M - j ) {
+      (*cut)(A, N, i, depthLimit);
+      (*cut)(A, j, M, depthLimit);
+      return;
+    }
+    (*cut)(A, j, M, depthLimit);
+    (*cut)(A, N, i, depthLimit);
+
+} // end dflgmQ
+
 
 void dflgmTestX(int *A, int N, int M) {
   int L = M - N; 
