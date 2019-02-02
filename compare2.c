@@ -794,8 +794,15 @@ void timeTest() {
   int cut4Time, T;
   int seed;
   //  int seedLimit = 300000;
-  int seedLimit = 4;
-  int reps = 10;
+  int seedLimit = 1;
+  /* One can increase reps provided other processes do not 
+     mess up the average.
+     Just check each new timing generated that it has not been 
+     'contamined' by a back ground process like a browser.
+     It is machine dependent.  An i3 box had 30 stable 
+     measurements.
+   */
+  int reps = 15;
   int z;
   // int k;
   int siz = size2;
@@ -832,9 +839,9 @@ void timeTest() {
       // tps3(A, 0, siz-1);
       // tps2(A, 0, siz-1);
       // dpqSort(A, 0, siz-1);
-      // cut4(A, 0, siz-1);  
+      cut4(A, 0, siz-1);  
       // dflglTest(A, 0, siz-1);
-      dflgmTest(A, 0, siz-1);  
+      // dflgmTest(A, 0, siz-1);  
       // dflgmTestX(A, 0, siz-1);  
       // dflgmTestY(A, 0, siz-1);  
       // dflgmTestZ(A, 0, siz-1);
@@ -848,6 +855,7 @@ void timeTest() {
     cut4Time = (clock() - T - TFill)/ seedLimit;
     printf("algorithm time: %d \n", cut4Time);
     sumTimes = sumTimes + cut4Time;
+    printf("z %i average time: %d\n", z, sumTimes/(1+z));
   }
   printf("%s %d %s", "average time: ", (sumTimes/reps), "\n");
   free(A);
@@ -9761,8 +9769,9 @@ void siftDown(int *a, int start, int end) {
 #define inline
 #endif
 
-static inline char	*med33 _PARAMS((char *, char *, char *, int (*)()));
-static inline void	 swapfunc _PARAMS((char *, char *, int, int));
+// The next two lines are not accept by some gcc compilers.
+// static inline char	*med33 _PARAMS((char *, char *, char *, int (*)()));
+// static inline void	 swapfunc _PARAMS((char *, char *, int, int));
 
 #define min(a, b)	(a) < (b) ? a : b
 
